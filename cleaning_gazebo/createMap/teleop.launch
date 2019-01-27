@@ -1,0 +1,7 @@
+<launch>
+<arg name="model" default="$(optenv TURTLEBOT3_MODEL burger)" doc="model type [burger, waffle, waffle_pi]"/>
+  <include file="$(find turtlebot3_teleop)/launch/turtlebot3_teleop_key.launch">
+    <remap from="screen" to="log" />
+    <arg name="model" value="$(arg model)"/>
+  </include>
+ </launch>

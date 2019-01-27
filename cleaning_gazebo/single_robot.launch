@@ -1,0 +1,51 @@
+<launch>
+  <!-- Arguments -->
+  <arg name="model" default="$(optenv TURTLEBOT3_MODEL burger)" doc="model type [burger, waffle, waffle_pi]"/>
+  <arg name="map_file" default="$(env PWD)/maps/reference_map.yaml"/>
+  <arg name="base_dir" default="$(env PWD)" />
+
+  <!-- Turtlebot3 -->
+  <include file="$(find turtlebot3_bringup)/launch/turtlebot3_remote.launch">
+    <arg name="model" value="burger" />
+  </include>
+
+  <!-- Map server -->
+  <node pkg="map_server" name="map_server" type="map_server" args="$(arg map_file)"/>
+
+  <!-- AMCL -->
+  <include file="$(find turtlebot3_navigation)/launch/amcl.launch"/>
+
+
+<!--  
+<node pkg="fake_localization" type="fake_localization" name="fake_localization" output="screen">
+      <remap from="base_pose_ground_truth" to="/odom" />
+  </node> -->
+
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+    <remap from="scan" to="/scan"/>
+    <remap from="odom" to="/odom"/>
+    <remap from="cmd_vel" to="/cmd_vel"/>
+
+    <rosparam file="$(arg base_dir)/yaml/move_base.yaml" command="load" />
+    <param name="base_local_planner" value="dwa_local_planner/DWAPlannerROS" />
+    <rosparam file="$(arg base_dir)/yaml/dwa_local_planner.yaml" command="load" />
+
+    <rosparam file="$(arg base_dir)/yaml/common_costmap.yaml" command="load" ns="global_costmap" />
+    <param name="global_costmap/obstacle_layer/base_scan/topic" value="/scan"/>
+    <rosparam file="$(arg base_dir)/yaml/global_costmap.yaml" command="load" />
+    <param name="global_costmap/obstacle_layer/base_scan/sensor_frame" value="base_scan"/>
+    <param name="global_costmap/robot_base_frame" value="base_link"/>
+    <param name="global_costmap/global_frame" value="map"/>
+    <param name="global_costmap/static_layer/map_topic" value="/map"/>
+    
+    <rosparam file="$(arg base_dir)/yaml/common_costmap.yaml" command="load" ns="local_costmap" />
+    <rosparam file="$(arg base_dir)/yaml/local_costmap.yaml" command="load" />
+    <param name="local_costmap/obstacle_layer/base_scan/topic" value="/scan"/>
+    <param name="local_costmap/obstacle_layer/base_scan/sensor_frame" value="base_scan"/>
+    <param name="local_costmap/robot_base_frame" value="base_link"/>
+    <param name="local_costmap/global_frame" value="odom"/>
+
+
+  </node>
+
+</launch>

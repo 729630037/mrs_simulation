@@ -1,0 +1,18 @@
+global_costmap:
+  obstacle_range: 3.0
+  raytrace_range: 3.5
+  transform_tolerance: 0.3
+  footprint: [[-0.105, -0.105], [-0.105, 0.105], [0.041, 0.105], [0.041, -0.105]]
+  inflation_radius: 0.55
+  
+  observation_sources: base_scan
+  base_scan: {sensor_frame: base_scan, data_type: LaserScan, topic: scan, marking: true, clearing: true, expected_update_rate: 0.40, inf_is_valid: true, observation_persistence: 0.0}
+  
+  global_frame: map
+  robot_base_frame: base_link
+  update_frequency: 5.0
+  static_map: true
+    #track_unknown_space: true
+
+
+

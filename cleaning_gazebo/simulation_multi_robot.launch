@@ -1,0 +1,34 @@
+<launch>
+  <arg name="model" default="burger"/> <!--waffle alternatively -->
+
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(env PWD)/small_environment.world"/>
+    <arg name="paused" value="false"/>
+    <arg name="use_sim_time" value="true"/>
+    <arg name="gui" value="true"/>
+    <arg name="headless" value="false"/>
+    <arg name="debug" value="false"/>
+  </include>
+
+  <arg name="tb3_0" value="tb3_0"/>
+  <arg name="tb3_0_x_pos" default="-4.0"/>
+  <arg name="tb3_0_y_pos" default="4.5"/>
+  <arg name="tb3_0_z_pos" default="0.0"/>
+  <arg name="tb3_0_yaw"   default="0.0"/>
+  <group ns = "$(arg tb3_0)">
+    <param name="robot_description" command="$(find xacro)/xacro $(find turtlebot3_description)/urdf/turtlebot3_$(arg model).urdf.xacro" />
+    <node pkg="gazebo_ros" type="spawn_model" name="spawn_urdf"  args="-urdf -model turtlebot3_$(arg tb3_0) -x $(arg tb3_0_x_pos) -y $(arg tb3_0_y_pos) -z $(arg tb3_0_z_pos) -Y $(arg tb3_0_yaw) -param robot_description" />
+  </group>
+
+  <arg name="tb3_1" value="tb3_1"/>
+  <arg name="tb3_1_x_pos" default="3.0"/>
+  <arg name="tb3_1_y_pos" default="2.5"/>
+  <arg name="tb3_1_z_pos" default="0.0"/>
+  <arg name="tb3_1_yaw"   default=" 0.0"/>
+  <group ns = "$(arg tb3_1)">
+    <param name="robot_description" command="$(find xacro)/xacro $(find turtlebot3_description)/urdf/turtlebot3_$(arg model).urdf.xacro" />
+    <node pkg="gazebo_ros" type="spawn_model" name="spawn_urdf"  args="-urdf -model turtlebot3_$(arg tb3_1) -x $(arg tb3_1_x_pos) -y $(arg tb3_1_y_pos) -z $(arg tb3_1_z_pos) -Y $(arg tb3_1_yaw) -param robot_description" />
+  </group>
+
+
+</launch>

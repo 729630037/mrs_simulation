@@ -1,0 +1,14 @@
+<launch>
+<arg name="record_all"/>
+<arg name="record_default"/>
+
+<group if="$(arg record_all)">
+   <node pkg="rosbag" type="record" name="rosbag_record_all" args="record -o multirobot_navigation -a" />
+</group>
+
+<group if="$(arg record_default)">
+   <node pkg="rosbag" type="record" name="rosbag_record_default" args="record -o multirobot_exploration /tb3_0/cmd_vel /tb3_0/imu /tb3_0/joint_states /tb3_0/odom /tb3_0/scan /tb3_1/cmd_vel /tb3_1/imu /tb3_1/joint_states /tb3_1/odom /tb3_1/scan" />
+</group>
+
+   <!-- <node pkg="rosbag" type="record" name="rosbag_record_something_else" args="record /topic1 /topic2" /> -->
+</launch>

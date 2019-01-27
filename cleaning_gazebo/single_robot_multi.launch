@@ -1,0 +1,64 @@
+<launch>
+
+  <arg name="x"/>
+  <arg name="y"/>
+  <arg name="z"/>
+  <arg name="yaw"/>
+  <arg name="move_destinations"/>
+  <arg name="robot_specifier" default="" />
+  <!-- Arguments -->
+  <arg name="model" default="$(optenv TURTLEBOT3_MODEL burger)" doc="model type [burger, waffle, waffle_pi]"/>
+  <arg name="map_file" default="$(env PWD)/maps/reference_map.yaml"/>
+  <arg name="base_dir" default="$(env PWD)" />
+
+  <!-- Turtlebot3 -->
+  <include file="$(find turtlebot3_bringup)/launch/turtlebot3_remote.launch">
+    <arg name="model" value="burger" />
+    <arg name="multi_robot_name" value="$(arg robot_specifier)" /> <!-- Used as tf_prefix for robot state pulisher (transforms)-->
+  </include>
+
+  <!-- Map server -->
+  <node pkg="map_server" name="map_server" type="map_server" args="$(arg map_file)"/>
+
+  <!-- AMCL -->
+  <include file="$(find turtlebot3_navigation)/launch/amcl.launch" />
+  <param name="/$(arg robot_specifier)/amcl/global_frame_id" value="map" />
+  <param name="/$(arg robot_specifier)/amcl/odom_frame_id" value="/$(arg robot_specifier)/odom" />
+  <param name="/$(arg robot_specifier)/amcl/base_frame_id" value="/$(arg robot_specifier)/base_link" />
+  <param name="/$(arg robot_specifier)/amcl/initial_pose_x" value="$(arg x)" />
+  <param name="/$(arg robot_specifier)/amcl/initial_pose_y" value="$(arg y)" />
+  <param name="/$(arg robot_specifier)/amcl/initial_pose_a" value="$(arg yaw)" />
+
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+    <remap from="scan" to="/$(arg robot_specifier)/scan"/>
+    <remap from="odom" to="/$(arg robot_specifier)/odom"/>
+    <remap from="cmd_vel" to="/$(arg robot_specifier)/cmd_vel"/>
+
+    <param name="base_global_planner" value="global_planner/GlobalPlanner" />
+    <rosparam file="$(env PWD)/yaml/global_planner.yaml" command="load" />
+
+    <rosparam file="$(arg base_dir)/yaml/move_base.yaml" command="load" />
+    <param name="base_local_planner" value="dwa_local_planner/DWAPlannerROS" />
+    <rosparam file="$(arg base_dir)/yaml/dwa_local_planner.yaml" command="load" />
+
+    <rosparam file="$(arg base_dir)/yaml/common_costmap.yaml" command="load" ns="global_costmap" />
+    <rosparam file="$(arg base_dir)/yaml/global_costmap.yaml" command="load" />
+    <param name="global_costmap/obstacle_layer/base_scan/topic" value="/$(arg robot_specifier)/scan"/>
+    <param name="global_costmap/obstacle_layer/base_scan/sensor_frame" value="$(arg robot_specifier)/base_scan"/>
+    <param name="global_costmap/robot_base_frame" value="$(arg robot_specifier)/base_link"/>
+    <param name="global_costmap/global_frame" value="map"/>
+    <param name="global_costmap/static_layer/map" value="/$(arg robot_specifier)/static_map"/>
+
+    <rosparam file="$(arg base_dir)/yaml/common_costmap.yaml" command="load" ns="local_costmap" />
+    <rosparam file="$(arg base_dir)/yaml/local_costmap.yaml" command="load" />
+    <param name="local_costmap/obstacle_layer/base_scan/topic" value="/$(arg robot_specifier)/scan"/>
+    <param name="local_costmap/obstacle_layer/base_scan/sensor_frame" value="$(arg robot_specifier)/base_scan"/>
+    <param name="local_costmap/robot_base_frame" value="$(arg robot_specifier)/base_link"/>
+    <param name="local_costmap/global_frame" value="$(arg robot_specifier)/odom"/>
+  </node>
+
+  <node pkg="goal_provider" type="goal_provider" name="goal_provider" output="screen">
+    <param name="goals" value="$(arg move_destinations)" />
+  </node>
+
+</launch>

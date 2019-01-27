@@ -1,0 +1,58 @@
+<launch>
+
+  <arg name="record_all" default="false"/>
+  <arg name="record_default" default="false"/>
+  <arg name="record_launch" value="$(env PWD)/record.launch"/>
+  
+  <arg name="robot_launch" value="$(env PWD)/single_robot_multi.launch"/>
+
+  <include file="$(arg record_launch)">
+    <arg name="record_all" value="$(arg record_all)"/>
+    <arg name="record_default" default="$(arg record_default)"/>
+  </include>
+
+  <arg name="tb3_0" value="tb3_0"/>
+  <arg name="tb3_0_x_pos" default="-4.0"/> <!-- Referring to the reference map! -->
+  <arg name="tb3_0_y_pos" default="4.5"/>
+  <arg name="tb3_0_z_pos" default="0.0"/>
+  <arg name="tb3_0_yaw"   default="0.0"/>
+
+  <arg name="tb3_1" value="tb3_1"/>
+  <arg name="tb3_1_x_pos" default="3.0"/>
+  <arg name="tb3_1_y_pos" default="2.5"/>
+  <arg name="tb3_1_z_pos" default="0.0"/>
+  <arg name="tb3_1_yaw"   default="0.0"/>
+
+  <group ns="$(arg tb3_0)"> 
+    <include file="$(arg robot_launch)">
+      <arg name="robot_specifier" value="$(arg tb3_0)"/>
+      <arg name="x" value="$(arg tb3_0_x_pos)"/> <!-- NOT necessarily the same as in simulator, depends on reference map used by AMCL -->
+      <arg name="y" value="$(arg tb3_0_y_pos)"/>
+      <arg name="z" value="$(arg tb3_0_z_pos)"/>
+      <arg name="yaw" value="$(arg tb3_0_yaw)"/>
+      <arg name="move_destinations" value="[[-1.0,3.0], [4,-1.0], [4.2,-3.5]]"/>
+    </include>
+  </group>
+
+
+  <group ns="$(arg tb3_1)"> 
+    <include file="$(arg robot_launch)">
+      <arg name="robot_specifier" value="$(arg tb3_1)"/>
+      <arg name="x" value="$(arg tb3_1_x_pos)"/>
+      <arg name="y" value="$(arg tb3_1_y_pos)"/>
+      <arg name="z" value="$(arg tb3_1_z_pos)"/>
+      <arg name="yaw" value="$(arg tb3_1_yaw)"/>
+      <arg name="move_destinations" value="[[3.5,4.0,0.0,0.0,0.0,1.0,1.0],[1.5,-1.0], [3.8, -3.0], [-4.0, 3.0,0.0,0.0,0.0,1.0,1.0]]"/>
+    </include>
+  </group>
+
+  <node pkg="exploration_monitor" type="exploration_monitor" name="execution_monitor" output="screen" respawn="false" required="true">
+    <param name="monitoring_rate" value="2" />
+    <param name="shutdown_topic" value="execution_ended"/>
+    <param name="timeout_threshold" value="300"/>
+  </node>
+
+<param name="simulator_node_name" value="/gazebo"/> <!-- It's just a python script and not an actual ROS node, so the parameter is set globally -->
+<!-- <node name="performance_logger" pkg="morse_internals_publisher" type="processObserver.py" output="screen"/> -->
+
+</launch>
