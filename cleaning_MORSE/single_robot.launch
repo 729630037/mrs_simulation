@@ -1,0 +1,57 @@
+<launch>
+
+  <node pkg="tf2_ros" type="static_transform_publisher" name="base_laser_link" args="0 0 0.252 0 0 0 base_link base_laser_link" output="screen" />
+  <node pkg="tf2_ros" type="static_transform_publisher" name="base_link" args="0 0 0 0 0 0 base_footprint base_link" output="screen" />
+
+  <arg name="reference_map_file" default="$(env PWD)/maps/reference_map.yaml" />
+
+  <node name="map_server" pkg="map_server" type="map_server" args="$(arg reference_map_file)">
+    <remap from="map" to="/map_server/map"/>
+  </node>
+
+  <node pkg="amcl" type="amcl" name="amcl" output="screen">
+    <remap from="scan" to="/p3dx/sick" />
+    <remap from="map" to="/map_server/map" />
+    <param name="odom_frame_id" value="odom" /> <!-- default -->
+    <param name="base_frame_id" value="base_link" /> <!-- default -->    
+  </node>
+
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+    <remap from="base_scan" to="/p3dx/sick"/>
+    <remap from="odom" to="/p3dx/odom"/>
+    <remap from="cmd_vel" to="/p3dx/motion"/>
+
+    <param name="base_global_planner" value="global_planner/GlobalPlanner" />
+    <rosparam file="$(env PWD)/yaml/global_planner.yaml" command="load" />
+    <!-- <param name="base_local_planner" value="dwa_local_planner/DWAPlannerROS"/> 
+    <rosparam file="$(env PWD)/yaml/local_planner_dwa.yaml" command="load" />  --><!-- For dwa_local_planner/DWAPlannerROS-->
+    <rosparam file="$(env PWD)/yaml/trajectory_planner.yaml" command="load" />
+    <param name="controller_frequency" value="10.0"/>
+
+    <rosparam file="$(env PWD)/yaml/global_costmap.yaml" command="load" />
+    <rosparam file="$(env PWD)/yaml/common_costmap.yaml" command="load" ns="global_costmap"/>
+    <param name="global_costmap/obstacle_layer/base_scan/topic" value="/p3dx/sick"/>
+    <param name="global_costmap/obstacle_layer/base_scan/sensor_frame" value="base_laser_link"/>
+    <param name="global_costmap/robot_base_frame" value="base_link"/>
+    <param name="global_costmap/global_frame" value="map"/>
+    <param name="global_costmap/static_layer/map_topic" value="/map_server/map"/>
+
+    <rosparam file="$(env PWD)/yaml/local_costmap.yaml" command="load" />
+    <rosparam file="$(env PWD)/yaml/common_costmap.yaml" command="load" ns="local_costmap"/>
+    <param name="local_costmap/obstacle_layer/base_scan/topic" value="/p3dx/sick"/>
+    <param name="local_costmap/obstacle_layer/base_scan/sensor_frame" value="base_laser_link"/>
+    <param name="local_costmap/robot_base_frame" value="base_link"/>
+    <param name="local_costmap/global_frame" value="/p3dx/odom"/>
+
+  </node>
+</launch>
+
+<!--
+  <node pkg="morse_internals_publisher" type="morseInternalsPublisher.py" name="morse_internals_publisher"  output="screen">
+    <param name="simulation_services" value="[['get_scene_objects']]"/>
+    <param name="time_services" value="[['statistics']]"/>
+    <param name="frequency" value="2"/>
+  </node>
+-->
+<!-- <node name="performance_logger" pkg="morse_internals_publisher" type="processObserver.py" output="screen"/> -->
+

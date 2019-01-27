@@ -1,0 +1,82 @@
+<launch>
+
+  <arg name="robot_name" default="p3dx"/>
+  <arg name="id" default="0"/>
+  <arg name="x"/>
+  <arg name="y"/>
+  <arg name="z"/>
+  <arg name="yaw"/>
+  <arg name="move_destinations"/>
+  <arg name="robot_specifier" value="$(arg robot_name)$(arg id)" />
+
+
+  <node pkg="tf2_ros" type="static_transform_publisher" name="base_laser_link" args="0 0 0.252 0 0 0 $(arg robot_specifier)_tf/base_link $(arg robot_specifier)_tf/base_laser_link" output="screen" />
+  <node pkg="tf2_ros" type="static_transform_publisher" name="base_link" args="0 0 0 0 0 0 $(arg robot_specifier)_tf/base_footprint $(arg robot_specifier)_tf/base_link" output="screen" />
+
+  <arg name="reference_map_file" default="$(env PWD)/maps/reference_map.yaml" />
+
+  <node name="map_server" pkg="map_server" type="map_server" args="$(arg reference_map_file)">
+    <!-- <remap from="map" to="/map_server/map"/> -->
+    <!-- <param name="frame_id" value="$(arg robot_specifier)/map"/> -->
+  </node>
+
+  <node pkg="amcl" type="amcl" name="amcl" output="screen">
+    <remap from="scan" to="/$(arg robot_specifier)/sick$(arg id)" />
+    <!-- <param name="global_frame_id" value="$(arg robot_specifier)/map" /> -->
+    <!-- <remap from="map" to="/map_server/map" />
+    <param name="use_map_topic" value="true"> -->
+    <!-- If we start this launch file within a namespace but want to use a map server outside, we need to remap the service that is requested -->
+    <!--<remap from="static_map" to="/static_map" /> -->
+    <param name="odom_frame_id" value="$(arg robot_specifier)_tf/odom" />    
+    <param name="base_frame_id" value="$(arg robot_specifier)_tf/base_link" />    
+    <param name="initial_pose_x" value="$(arg x)" />
+    <param name="initial_pose_y" value="$(arg y)" />
+    <param name="initial_pose_a" value="$(arg yaw)" />
+  </node>
+
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+    <remap from="base_scan" to="/$(arg robot_specifier)/sick$(arg id)"/>
+    <remap from="odom" to="/$(arg robot_specifier)/odom$(arg id)"/>
+    <remap from="cmd_vel" to="/$(arg robot_specifier)/motion$(arg id)"/>
+
+    <param name="base_global_planner" value="global_planner/GlobalPlanner" />
+    <rosparam file="$(env PWD)/yaml/global_planner.yaml" command="load" />
+    <!-- <param name="base_local_planner" value="dwa_local_planner/DWAPlannerROS"/> 
+    <rosparam file="$(env PWD)/yaml/local_planner_dwa.yaml" command="load" />  --><!-- For dwa_local_planner/DWAPlannerROS-->
+    <rosparam file="$(env PWD)/yaml/trajectory_planner.yaml" command="load" />
+    <param name="controller_frequency" value="10.0"/>
+
+    <rosparam file="$(env PWD)/yaml/global_costmap.yaml" command="load" />
+    <rosparam file="$(env PWD)/yaml/common_costmap.yaml" command="load" ns="global_costmap"/>
+    <param name="global_costmap/obstacle_layer/base_scan/topic" value="/$(arg robot_specifier)/sick$(arg id)"/>
+    <param name="global_costmap/obstacle_layer/base_scan/sensor_frame" value="$(arg robot_specifier)_tf/base_laser_link"/>
+
+    <param name="global_costmap/robot_base_frame" value="$(arg robot_specifier)_tf/base_link"/>
+    <param name="global_costmap/global_frame" value="map"/>
+    <!-- <param name="global_costmap/static_layer/map" value="/static_map"/> -->
+    <param name="global_costmap/static_layer/map_topic" value="/$(arg robot_specifier)/map"/>
+
+    <rosparam file="$(env PWD)/yaml/local_costmap.yaml" command="load" />
+    <rosparam file="$(env PWD)/yaml/common_costmap.yaml" command="load" ns="local_costmap"/>
+    <param name="local_costmap/obstacle_layer/base_scan/topic" value="/$(arg robot_specifier)/sick$(arg id)"/>
+    <param name="local_costmap/obstacle_layer/base_scan/sensor_frame" value="$(arg robot_specifier)_tf/base_laser_link"/>
+    <param name="local_costmap/robot_base_frame" value="$(arg robot_specifier)_tf/base_link"/>
+    <param name="local_costmap/global_frame" value="$(arg robot_specifier)_tf/odom"/>
+
+  </node>
+
+  <node pkg="goal_provider" type="goal_provider" name="goal_provider" output="screen">
+    <param name="goals" value="$(arg move_destinations)" />
+  </node>
+
+</launch>
+
+<!--
+  <node pkg="morse_internals_publisher" type="morseInternalsPublisher.py" name="morse_internals_publisher"  output="screen">
+    <param name="simulation_services" value="[['get_scene_objects']]"/>
+    <param name="time_services" value="[['statistics']]"/>
+    <param name="frequency" value="2"/>
+  </node>
+-->
+<!-- <node name="performance_logger" pkg="morse_internals_publisher" type="processObserver.py" output="screen"/> -->
+

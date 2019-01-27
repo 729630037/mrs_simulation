@@ -1,0 +1,42 @@
+<launch>
+  <arg name="robot_launch" value="$(env PWD)/single_robot_multi.launch"/>
+
+
+
+  <arg name="0" default="true"/>
+  <group ns="p3dx0" if="$(arg 0)"> <!-- namespace and robot_name+id should match -->
+    <include file="$(arg robot_launch)">
+      <arg name="robot_name" value="p3dx"/>
+      <arg name="id" value="0"/>
+      <arg name="x" value="0.0"/> <!-- NOT necessarily the same as in simulator, depends on reference map used by AMCL -->
+      <arg name="y" value="0.0"/>
+      <arg name="z" value="0.0"/>
+      <arg name="yaw" value="0.0"/>
+      <arg name="move_destinations" value="[[10.0,-10.0], [10.0,-20.0], [30.0,-30.0]]"/>
+    </include>
+  </group>
+
+  <arg name="1" default="true"/>
+  <group ns="p3dx1" if="$(arg 1)"> <!-- namespace and robot_name+id should match -->
+    <include file="$(arg robot_launch)">
+      <arg name="robot_name" value="p3dx"/>
+      <arg name="id" value="1"/>
+      <arg name="x" value="30.0"/>
+      <arg name="y" value="-8.0"/>
+      <arg name="z" value="0.0"/>
+      <arg name="yaw" value="0.0"/>
+      <arg name="move_destinations" value="[[30.0,-5.0,0.0,0.5],[30.0,-20.0], [5.0,-25.0], [5.0,-5.0]]"/>
+    </include>
+  </group>
+
+<!--
+  <node pkg="morse_internals_publisher" type="morseInternalsPublisher.py" name="morse_internals_publisher"  output="screen">
+    <param name="simulation_services" value="[['get_scene_objects']]"/>
+    <param name="communication_services" value="[['distance_and_view', 'p3dx0', 'p3dx1']]"/>
+    <param name="time_services" value="[['statistics']]"/>
+    <param name="frequency" value="2"/>
+  </node>
+-->
+<!-- <node name="performance_logger" pkg="morse_internals_publisher" type="processObserver.py" output="screen"/> -->
+
+</launch>

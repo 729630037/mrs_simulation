@@ -1,0 +1,15 @@
+obstacle_range: 25.0
+raytrace_range: 26.0
+transform_tolerance: 0.2
+footprint: [[0.254, -0.0508], [0.1778, -0.0508], [0.1778, -0.1778], [-0.1905, -0.1778], [-0.254, 0], [-0.1905, 0.1778], [0.1778, 0.1778], [0.1778, 0.0508], [0.254, 0.0508]]
+map_type: costmap
+inflation_layer:
+  inflation_radius: 0.55
+
+obstacle_layer:
+  observation_sources: base_scan
+  base_scan: {sensor_frame: frame_name, data_type: LaserScan, topic: topic_name, marking: true, clearing: true, expected_update_rate: 0.20}
+  #track_unknown_space: true
+
+
+
