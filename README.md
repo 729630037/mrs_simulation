@@ -56,8 +56,8 @@ We need to create a catkin workspace and build several of the packages from sour
          `git clone https://github.com/ros-perception/openslam_gmapping.git`
          `git clone https://github.com/ros-perception/slam_gmapping.git`
        - Get the remaining packages:
-          - Clone the mrs_exploration repository
-          - Clone the mrs_packages repository
+          - Clone the mrs_exploration repository https://github.com/anapetrovska/mrs_exploration
+          - Clone the mrs_packages repository https://github.com/anapetrovska/mrs_packages
   - For the __multi-robot cleaning__ use case:
      - Get the Kinetic release of the navigation stack; you can either clone the repository and checkout the Kinetic release with `git clone https://github.com/ros-planning/navigation.git && git checkout kinetic-devel && git checkout tags/1.14.4 -b most-recent-kinetic-release` or you just [download the zipped files](https://github.com/ros-planning/navigation/archive/1.14.4.zip) and unpack them. In both cases we have to make a little change to `amcl/src/amcl_node.cpp` to build for Melodic, the adaption is explained [here](https://github.com/moriarty/navigation/commit/ae060c92a423783c45ef35005ec443e5736c6689).
      - Get the Turtlebot resources: `git clone https://github.com/ROBOTIS-GIT/turtlebot3.git`
