@@ -1,0 +1,146 @@
+<launch>
+  <arg name="n"/>
+  <arg name="x"/>
+  <arg name="y"/>
+  <arg name="z"/>
+  <!--<remap from="/tf" to="/p3dx$(arg n)_tf"/> IF WE USE tf_splitter -->
+  <!-- <param name="tf_prefix" value="p3dx$(arg n)_tf"/> --> <!-- not supported by tf (which uses tf2 under the hood) anymore, but explore still relies on it -->
+  <!-- robot_state_publisher and p2os_urdf need to be commented out in the experiment to save network bandwidth. -->
+  <!-- <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" output="screen"/> -->
+
+  <!-- <node pkg="p2os_urdf" type="p2os_publisher" name="publisher" output="screen"/> -->
+
+  <!-- publish robot pose -->
+<node pkg="robot_pose_publisher" type="robot_pose_publisher" name="robot_pose_publisher" output="screen">
+    <param name="base_frame" value="p3dx$(arg n)_tf/base_link"/>  <!-- Node does a lookup on transform from map to base frame for which-->
+    <param name="map_frame" value="p3dx$(arg n)_tf/map"/>         <!-- parameters from parameter server are used. We have to set them here-->
+    <param name="publish_frequency" value="10.0"/> <!-- default: 10; in Hz -->                <!-- to align them with the naming scheme-->
+    <param name="is_stamped" value="true"/>
+</node>
+
+  
+  <!--transformation only for correctly display in RVIZ -->
+<!--
+<node pkg="tf" type="static_transform_publisher" name="robot_map" args="$(arg x) $(arg y) $(arg z) 0 0 0 /map p3dx$(arg n)_tf/map 100"/> 
+-->
+  <!-- **************************************************************************** -->
+  <!-- ****** Transformation requirements: [REP105] map -> odom -> base_link ****** -->
+  <!--IMPORTANT: Same naming as in the MORSE builder script -->
+  <!-- Costmap_2d requires a transformation from /base_link to /map -->
+  <node pkg="tf" type="static_transform_publisher" name="base_laser_link" args="0 0 0.252 0 0 0 p3dx$(arg n)_tf/base_link p3dx$(arg n)_tf/base_laser_link 100" output="screen"/>
+  <!-- The odometry sensor in MORSE automatically publishes the TF transformation between the /odom and /base_footprint frames -->
+  <node pkg="tf" type="static_transform_publisher" name="base_link" args="0 0 0 0 0 0 p3dx$(arg n)_tf/base_footprint p3dx$(arg n)_tf/base_link 100" output="screen"/>
+  
+  <!-- LOCALIZATION METHOD 0: frame transformation -->
+  <!-- Make sure that "fake_localization" param in "zcoordination" node has been set to "true".
+  <node pkg="tf" type="static_transform_publisher" name="odom" args="$(arg x) $(arg y) $(arg z) 0 0 0 map odom 100" output="screen"/>
+-->
+ 
+  <!-- LOCALIZATION METHOD 1: fake AMCL -->
+  <!--
+       <node pkg="fake_localization" type="fake_localization" name="fake_localization" output="screen">
+       <remap from="base_pose_ground_truth" to="/p3dx$(arg n)/odom$(arg n)"/>
+       
+       <param name="base_frame_id" value="p3dx$(arg n)_tf/base_link"/>
+       <param name="global_frame_id" value="p3dx$(arg n)_tf/map"/>
+       <param name="odom_frame_id" value="p3dx$(arg n)_tf/odom"/>
+       
+       <param name="delta_x" value="-$(arg x)"/>
+       <param name="delta_y" value="-$(arg y)"/>
+       <param name="delta_yaw" value="0.0"/>
+       </node>
+  -->
+  
+  <!-- Localization 2: SLAM -->
+
+  <node pkg="gmapping" type="slam_gmapping" name="slam_gmapping" output="screen">
+    <remap from="scan" to="/p3dx$(arg n)/sick$(arg n)"/>
+    
+    <param name="base_frame" value="p3dx$(arg n)_tf/base_link"/>
+    <param name="map_frame" value="p3dx$(arg n)_tf/map"/>
+    <param name="odom_frame" value="p3dx$(arg n)_tf/odom"/>
+    
+    <param name="maxRange" value="26.0"/>
+    <param name="maxUrange" value="25.0"/>
+    
+    <param name="xmin" value="-80.0"/>
+    <param name="xmax" value="80.0"/>
+    <param name="ymin" value="-80.0"/>
+    <param name="ymax" value="80.0"/>
+    <param name="delta" value="0.20"/>
+    <!-- <param name="particles" value="30"/> --> <!-- default: 30 -->
+    <!-- param name="minimumScore" value="50"/> -->
+    <!-- <param name="temporalUpdate" value="2.0"/> --> <!-- too low value may decrease quality -->
+
+    <param name="transform_publish_period" value="0.10"/> <!--default 0.05 how long in seconds between transform publications-->
+    <param name="map_update_interval" value="5.0"/>  <!--default: 5.0 (in seconds)-->
+  </node> 
+  
+  <!-- ********************* Transformation requirements: END ********************* -->
+  <!-- **************************************************************************** -->
+  
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+    <remap from="base_scan" to="/p3dx$(arg n)/sick$(arg n)"/> <!-- see YAML file for details-->
+    <remap from="odom" to="/p3dx$(arg n)/odom$(arg n)"/>
+    <remap from="cmd_vel" to="/p3dx$(arg n)/motion$(arg n)"/>
+
+    <param name="global_costmap/base_scan/topic" value="/p3dx$(arg n)/sick$(arg n)"/>
+    <param name="global_costmap/base_scan/sensor_frame" value="p3dx$(arg n)_tf/base_laser_link"/>
+    <param name="global_costmap/robot_base_frame" value="p3dx$(arg n)_tf/base_link"/>
+    <param name="global_costmap/global_frame" value="p3dx$(arg n)_tf/map"/>
+    <!-- <param name="global_costmap/map_topic" value="/p3dx$(arg n)/map" /> --> <!-- if turned on in global costmap YAML file, the map generated from SLAM can be used as static layer but then we must not use a rolling window-->
+
+    <param name="local_costmap/base_scan/topic" value="/p3dx$(arg n)/sick$(arg n)"/>
+    <param name="local_costmap/base_scan/sensor_frame" value="p3dx$(arg n)_tf/base_laser_link"/>
+    <param name="local_costmap/robot_base_frame" value="p3dx$(arg n)_tf/base_link"/>
+    <param name="local_costmap/global_frame" value="p3dx$(arg n)_tf/odom"/>
+    
+    <param name="controller_frequency" value="10.0"/> <!-- in Hz, default: 20.0 -->
+    
+    <rosparam file="$(env PWD)/yaml/costmap_common_p3dx.yaml" command="load" ns="global_costmap"/>
+    <rosparam file="$(env PWD)/yaml/global_costmap.yaml" command="load"/>
+    <rosparam file="$(env PWD)/yaml/navfn.yaml" command="load"/>
+    
+    <rosparam file="$(env PWD)/yaml/costmap_common_p3dx.yaml" command="load" ns="local_costmap"/>
+    <rosparam file="$(env PWD)/yaml/local_costmap.yaml" command="load"/>
+    <rosparam file="$(env PWD)/yaml/trajectory_planner.yaml" command="load"/>
+  </node>
+
+  <node pkg="explore_multirobot" type="explore_multirobot" name="explore_multirobot" output="screen" respawn="false">
+    <remap from="base_scan" to="/p3dx$(arg n)/sick$(arg n)"/>
+    <remap from="slam_entropy" to="/p3dx$(arg n)/slam_gmapping/entropy"/>
+    <remap from="map" to="/p3dx$(arg n)/map_merging/map"/>
+    <!-- <remap from="goal" to="move_base/goal"/> --> <!-- When loop closures take over robot control, they block thus they aren't external goals -->
+    
+    <param name="explore_costmap/robot_base_frame" value="p3dx$(arg n)_tf/base_link"/>
+    <param name="explore_costmap/global_frame" value="p3dx$(arg n)_tf/map"/>
+    <param name="explore_costmap/base_scan/sensor_frame" value="p3dx$(arg n)_tf/base_laser_link"/>
+    <param name="explore_costmap/base_scan/topic" value="/p3dx$(arg n)/sick$(arg n)"/>
+    <param name="explore_costmap/map_topic" value="/p3dx$(arg n)/map_merging/map" />
+
+    <rosparam file="$(env PWD)/yaml/explore_costmap_common_p3dx.yaml" command="load" ns="explore_costmap"/> 
+    <rosparam file="$(env PWD)/yaml/explore_costmap.yaml" command="load" />
+    
+    <param name="progress_timeout" value="3.0"/>
+    <param name="inscribed_scale" value="10.0"/>
+    <param name="potential_scale" value="0.005"/> <!-- weighting for reaching the point in cost functin -->
+    <param name="orientation_scale" value="0.0"/> <!-- weighting for changing orientation in cost function -->
+    <param name="gain_scale" value="1.0"/> <!-- weighting for information gain in cost function (decreases cost)-->
+    <param name="close_loops" value="false"/>
+    <param name="planner_frequency" value="1.0"/> <!-- default: 1.0 -->
+    <param name="navfn/robot_base_frame" value="p3dx$(arg n)_tf/base_link"/>
+    <param name="tf_prefix" value="p3dx$(arg n)_tf"/>
+  </node>
+
+  <node pkg="map_merging" type="map_merging" name="map_merging" output="screen" respawn="false">
+    <param name="max_comm_distance" value="1000.0"/> <!-- take care -->
+    <param name="init_pose_x" value="$(arg x)"/>
+    <param name="init_pose_y" value="$(arg y)"/>
+    <param name="init_pose_z" value="$(arg z)"/>
+    <param name="map_topic" value="map"/>
+    <param name="pose_topic" value="robot_pose"/>
+    <param name="map_fusion_method" value="greedy"/>
+    <param name="max_number_robots" value="2" />
+  </node>
+
+</launch>

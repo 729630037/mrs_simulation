@@ -1,0 +1,14 @@
+<launch>
+<arg name="record_all"/>
+<arg name="record_default"/>
+
+<group if="$(arg record_all)">
+   <node pkg="rosbag" type="record" name="rosbag_record_all" args="record -o multirobot_exploration -a" />
+</group>
+
+<group if="$(arg record_default)">
+   <node pkg="rosbag" type="record" name="rosbag_record_all" args="record -o multirobot_exploration /p3dx0/motion0 /p3dx0/odom0 /p3dx0/sick0 /p3dx1/motion1 /p3dx1/odom1 /p3dx1/sick1 /morse_internals/distance_and_view /morse_internals/get_scene_objects /morse_internals/statistics" />
+</group>
+
+   <!-- <node pkg="rosbag" type="record" name="rosbag_record_something_else" args="record /topic1 /topic2" /> -->
+</launch>

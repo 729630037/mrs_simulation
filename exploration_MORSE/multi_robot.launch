@@ -1,0 +1,71 @@
+<launch>
+<!--
+<include file="$(env PWD)/pioneer3dx.launch">
+	<arg name="n" value="0"/>
+      <arg name="x" value="-38.0"/>
+      <arg name="y" value="38.0"/>
+      <arg name="z" value="0.0"/>
+</include>
+-->
+  <arg name="record_all" default="false"/>
+  <arg name="record_default" default="false"/>
+  <arg name="record_launch" value="$(env PWD)/record.launch"/>
+  <arg name="robot_launch" value="$(env PWD)/pioneer3dx.launch"/>
+  <!-- param name="/use_sim_time" value="true"/> -->
+  <!-- <param name="robot_description" command="$(find xacro)/xacro.py $(find p2os_urdf)/defs/pioneer3dx.xacro"/> -->
+  <!-- <include file="$(env PWD)/echo_demo.launch"/> -->
+
+  <include file="$(arg record_launch)">
+    <arg name="record_all" value="$(arg record_all)"/>
+    <arg name="record_default" default="$(arg record_default)"/>
+  </include>
+<!-- <node pkg="tf" type="static_transform_publisher" name="map" args="0 0 0 0 0 0 /world /map 100"/> -->
+  <!-- ROBOT 0 -->
+  <arg name="0" default="true"/>
+  <group ns="p3dx0" if="$(arg 0)">
+    <!-- <param name="tf_prefix" value="p3dx0_tf"/> --> <!-- CAREFUL: we changed the parameters in the launch file to NOT rely on tf_prefix but if we set this value some packages (like gmapping) will still use it which may lead to the publication of wron frame_ids-->
+    <include file="$(arg robot_launch)">
+      <arg name="n" value="0"/>
+      <arg name="x" value="-18.0"/> <!-- should be the same as in simulator (or real robot) -->
+      <arg name="y" value="18.0"/>
+      <arg name="z" value="0.0"/>
+    </include>
+  </group>
+  
+  <!-- ROBOT 1 -->
+  <arg name="1" default="true"/>
+  <group ns="p3dx1" if="$(arg 1)">
+    <!-- <param name="tf_prefix" value="p3dx1_tf"/> -->
+    <include file="$(arg robot_launch)">
+      <arg name="n" value="1"/>
+      <arg name="x" value="12.0"/>
+      <arg name="y" value="10.0"/>
+      <arg name="z" value="0.0"/>
+    </include>
+  </group>
+
+<!--
+  <arg name="reference_map_file" default="$(env PWD)/reference_maps/demo_map.yaml" />
+
+  <node name="map_server" pkg="map_server" type="map_server" args="$(arg reference_map_file)">
+    <remap from="map" to="map_server/map"/>
+  </node>
+-->
+  <node pkg="exploration_monitor" type="exploration_monitor" name="exploration_monitor" output="screen" respawn="false" required="true">
+    <param name="shutdown_topic" value="exploration_ended"/>
+    <param name="timeout_threshold" value="300"/>
+    <!-- <param name="monitoring_shutdown_threshold" value="99.0" /> --> <!-- percentage; if set, node will shut down after this-->
+    <!-- <param name="total_exploration_area" value="2804" /> --> <!-- in sqauare meters -->
+    <!-- <param name="map_topic" value="/p3dx0/map"/> -->
+    <!-- <param name="reference_map_topic" value="map_server/map"/> -->
+  </node>
+  <node pkg="morse_internals_publisher" type="morseInternalsPublisher.py" name="morse_internals_publisher"  output="screen">
+    <param name="simulation_services" value="[['get_scene_objects']]"/>
+    <param name="communication_services" value="[['distance_and_view', 'p3dx0', 'p3dx1']]"/>
+    <param name="time_services" value="[['statistics']]"/>
+    <param name="frequency" value="2"/>
+  </node>
+
+<!-- <node name="performance_logger" pkg="morse_internals_publisher" type="processObserver.py" output="screen"/> -->
+</launch>
+

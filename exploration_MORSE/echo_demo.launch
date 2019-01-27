@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="msg" default="This is a demo message for testing." />
+  <node name="pub_text" pkg="rostopic" type="rostopic"
+     args="pub /msg std_msgs/String '$(arg msg)'"
+     output="screen" />
+  <node name="print_text" pkg="rostopic" type="rostopic"
+     args="echo /msg" output="screen" />
+</launch>
